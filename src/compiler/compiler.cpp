@@ -55,12 +55,14 @@ int Compiler::compile(ast::Fun * node) {
     env->setName("env");
 
     llvm::Function * doubleVectorLiteral =
-        declarePureFunction("doubleVectorLiteral", type::v_d, m.get());
+      declarePureFunction("doubleVectorLiteral", type::v_d, m.get());
 
+    
+    node->accept(this);
     // TODO: return something else than returning 0
-    result = b->CreateCall(doubleVectorLiteral,
-            vector<llvm::Value*>(
-                {llvm::ConstantFP::get(context(), llvm::APFloat(0.0f))}), "");
+    //result = b->CreateCall(doubleVectorLiteral,
+    //			   vector<llvm::Value*>(
+    //			     {llvm::ConstantFP::get(context(), llvm::APFloat(0.0f))}), "");
 
     // Append return instruction of the last used value
     b->CreateRet(result);
@@ -75,6 +77,23 @@ int Compiler::compile(ast::Fun * node) {
     env = oldEnv;
     return result;
 }
-
+  void Compiler::visit(ast::Fun* func) {
+    //just visit the body atm ... args later
+    func->body->accept(this);
+  }
+  void Compiler::visit(ast::Seq* seq) {
+    //loop over all arguments
+    for (auto elem : seq->body) {
+      elem->accept(this);
+    }
+  }
+  void Compiler::visit(ast::Num* expr) {
+    //for now, assume that there is only a single expr and that it is a number
+    double val = expr->value;
+    llvm::Function* dvl = m.get()->getFunction("doubleVectorLiteral");
+    result = b->CreateCall(dvl,
+			   vector<llvm::Value*>(
+			     {llvm::ConstantFP::get(context(), llvm::APFloat(val))}), "");
+  }
 
 }

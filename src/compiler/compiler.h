@@ -25,6 +25,9 @@ public:
         delete b;
     }
 
+    void visit(ast::Num* expr) override;
+    void visit(ast::Fun* func) override;
+    void visit(ast::Seq* seq) override;
 
 private:
 
