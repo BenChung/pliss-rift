@@ -56,7 +56,7 @@ int Compiler::compile(ast::Fun * node) {
 
     llvm::Function * doubleVectorLiteral =
       declarePureFunction("doubleVectorLiteral", type::v_d, m.get());
-
+    declarePureFunction("genericAdd", type::v_vv, m.get());
     
     node->accept(this);
     // TODO: return something else than returning 0
@@ -85,6 +85,22 @@ int Compiler::compile(ast::Fun * node) {
     //loop over all arguments
     for (auto elem : seq->body) {
       elem->accept(this);
+    }
+  }
+  void Compiler::visit(ast::BinExp* bexp) {
+    bexp->lhs->accept(this);
+    llvm::Value* lhs = result;
+    bexp->rhs->accept(this);
+    llvm::Value* rhs = result;
+    switch(bexp->op) {
+    case (ast::BinExp::Op::add):
+      result = b->CreateCall(m.get()->getFunction("genericAdd"),
+			     vector<llvm::Value*>({lhs, rhs}),
+			     "");
+      return;
+    default:
+      result = lhs; //TODO
+      return;
     }
   }
   void Compiler::visit(ast::Num* expr) {
